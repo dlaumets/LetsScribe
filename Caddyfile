@@ -1,10 +1,4 @@
-# HTTP-only until a real domain is configured.
-# Caddy's default auto-HTTPS redirects IP:80 → broken https://IP (no cert).
-{
-	auto_https off
-}
-
-:80 {
+transcriber.letscore.tech {
 	encode gzip
 
 	handle /bot/webhook* {
@@ -15,14 +9,3 @@
 		reverse_proxy api:8000
 	}
 }
-
-# When domain is ready, replace block below and remove global auto_https off:
-# your.domain.com {
-#     encode gzip
-#     handle /bot/webhook* {
-#         reverse_proxy bot:8081
-#     }
-#     handle {
-#         reverse_proxy api:8000
-#     }
-# }
