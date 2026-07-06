@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Standalone Telegram bot for VPS monitoring (not part of LetsTranscriber)."""
+"""Standalone Telegram bot for VPS monitoring (not part of LetsScribe)."""
 
 from __future__ import annotations
 
@@ -28,7 +28,10 @@ logger = logging.getLogger(__name__)
 
 router = Router()
 
-TRANSCRIBER_API = os.getenv("MONITOR_TRANSCRIBER_API", "http://127.0.0.1:8000").strip()
+SCRIBE_API = (
+    os.getenv("MONITOR_SCRIBE_API")
+    or os.getenv("MONITOR_TRANSCRIBER_API", "http://127.0.0.1:8000")
+).strip()
 CPV_UNITS = [
     unit.strip()
     for unit in os.getenv("MONITOR_CPV_UNITS", "cpv-bot.service,cpv-api.service").split(",")
@@ -79,7 +82,7 @@ async def _reply_status_with_charts(message: Message) -> None:
     waiting = await message.answer("⏳ Собираю метрики и графики…")
     try:
         snap = await asyncio.to_thread(
-            build_snapshot, TRANSCRIBER_API, CPV_UNITS, VPN_IFACE
+            build_snapshot, SCRIBE_API, CPV_UNITS, VPN_IFACE
         )
         text = format_snapshot(snap)
         charts = await asyncio.to_thread(render_charts, snap)
@@ -108,7 +111,7 @@ async def _reply_charts_only(message: Message) -> None:
     waiting = await message.answer("⏳ Рисую графики…")
     try:
         snap = await asyncio.to_thread(
-            build_snapshot, TRANSCRIBER_API, CPV_UNITS, VPN_IFACE
+            build_snapshot, SCRIBE_API, CPV_UNITS, VPN_IFACE
         )
         charts = await asyncio.to_thread(render_charts, snap)
         await waiting.delete()
@@ -135,11 +138,12 @@ async def cmd_help(message: Message) -> None:
         return
     await message.answer(
         "<b>Мониторинг сервера</b> (@LetsTracker_bot)\n"
-        "<i>Отдельный сервис, не связан с LetsTranscriber</i>\n\n"
+        "<i>Отдельный сервис, не связан с LetsScribe</i>\n\n"
         "/status — текст + графики\n"
         "/graphs — только графики\n"
         "/server — CPU, RAM, диск\n"
-        "/transcriber — LetsTranscriber\n"
+        "/scribe — LetsScribe\n"
+        "/transcriber — LetsScribe (alias)\n"
         "/docker — контейнеры\n"
         "/cpv — cpv_bot\n"
         "/vpn — VPN\n"
@@ -175,11 +179,11 @@ async def cmd_server(message: Message) -> None:
     await _reply_metrics(message, collect_server)
 
 
-@router.message(Command("transcriber"))
+@router.message(Command("transcriber", "scribe"))
 async def cmd_transcriber(message: Message) -> None:
     if not await deny_or(message):
         return
-    await _reply_metrics(message, collect_transcriber, TRANSCRIBER_API)
+    await _reply_metrics(message, collect_transcriber, SCRIBE_API)
 
 
 @router.message(Command("docker"))

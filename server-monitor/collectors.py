@@ -41,7 +41,7 @@ def format_docker(s: MetricsSnapshot) -> str:
 
 
 def format_transcriber(s: MetricsSnapshot) -> str:
-    lines = ["🎙 <b>LetsTranscriber</b>"]
+    lines = ["🎙 <b>LetsScribe</b>"]
     if s.transcriber_ok:
         model = "загружена" if s.transcriber_model_loaded else "не в памяти"
         lines.append(f"API: ok · модель {model}")
@@ -49,7 +49,7 @@ def format_transcriber(s: MetricsSnapshot) -> str:
     else:
         lines.append("API: недоступен")
     for c in s.docker:
-        if c.name.startswith("letstranscriber-"):
+        if c.name.startswith("letstranscriber-") or c.name.startswith("letsscribe-"):
             lines.append(
                 f"• <code>{c.short_name}</code>: CPU {c.cpu_percent:.1f}%, RAM {_fmt_mb(c.mem_used_mb)}"
             )

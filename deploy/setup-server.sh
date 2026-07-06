@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# One-time VPS setup for LetsTranscriber
+# One-time VPS setup for LetsScribe
 # Run as root on the server: bash setup-server.sh
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-/opt/letstranscriber}"
-REPO_URL="${REPO_URL:-https://github.com/dlaumets/LetsTranscriber.git}"
+APP_DIR="${APP_DIR:-/opt/letsscribe}"
+REPO_URL="${REPO_URL:-https://github.com/dlaumets/LetsScribe.git}"
 
 echo "==> Installing Docker..."
 if ! command -v docker &>/dev/null; then

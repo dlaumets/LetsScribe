@@ -31,7 +31,7 @@ from src.db.repository import (
 )
 from src.db.session import close_db, init_db
 
-app = FastAPI(title="Transcribe Service", version="1.1.0")
+app = FastAPI(title="LetsScribe", version="1.1.0")
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "web" / "static"
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"

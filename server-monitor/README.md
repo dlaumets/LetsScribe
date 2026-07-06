@@ -1,11 +1,11 @@
 # Server Monitor
 
-Отдельный Telegram-бот для мониторинга VPS. **Не входит** в Docker Compose LetsTranscriber.
+Отдельный Telegram-бот для мониторинга VPS. **Не входит** в Docker Compose LetsScribe.
 
 ## Что мониторит
 
 - Сервер: CPU load, RAM, swap, диск
-- Docker-контейнеры (в т.ч. LetsTranscriber)
+- Docker-контейнеры (в т.ч. LetsScribe)
 - CPV Bot (systemd)
 - VPN (awg0)
 
@@ -28,7 +28,8 @@ sudo bash setup.sh
 | `/status` | Текст + графики (PNG) |
 | `/graphs` | Только графики |
 | `/server` | Сервер |
-| `/transcriber` | LetsTranscriber |
+| `/scribe` | LetsScribe |
+| `/transcriber` | LetsScribe (alias) |
 | `/docker` | Docker |
 | `/cpv` | CPV Bot |
 | `/vpn` | VPN |
@@ -36,7 +37,7 @@ sudo bash setup.sh
 ## Обновление
 
 ```bash
-cd /opt/letstranscriber/server-monitor   # или где лежит репозиторий
+cd /opt/letsscribe/server-monitor   # или где лежит репозиторий
 git pull
 sudo bash setup.sh
 ```

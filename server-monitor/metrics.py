@@ -117,7 +117,7 @@ def _parse_docker_row(row: str) -> DockerContainer | None:
     name, cpu, mem_usage, mem_pct = parts[0], parts[1], parts[2], parts[3]
     used_raw, _, limit_raw = mem_usage.partition("/")
     limit_mb = _parse_size_to_mb(limit_raw) if limit_raw else None
-    short = name.replace("letstranscriber-", "").removesuffix("-1")
+    short = name.replace("letstranscriber-", "").replace("letsscribe-", "").removesuffix("-1")
     return DockerContainer(
         name=name,
         short_name=short,

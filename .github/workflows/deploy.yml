@@ -20,6 +20,13 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script_stop: true
           script: |
-            cd /opt/letstranscriber
-            git config --global --add safe.directory /opt/letstranscriber
+            if [ -d /opt/letsscribe ]; then
+              cd /opt/letsscribe
+            elif [ -d /opt/letstranscriber ]; then
+              cd /opt/letstranscriber
+            else
+              echo "No app directory found" >&2
+              exit 1
+            fi
+            git config --global --add safe.directory "$(pwd)"
             bash deploy/deploy.sh

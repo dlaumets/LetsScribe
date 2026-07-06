@@ -1,4 +1,9 @@
+# Legacy domain — redirect to LetsScribe (remove when DNS old record is gone)
 transcriber.letscore.tech {
+	redir https://scribe.letscore.tech{uri} permanent
+}
+
+scribe.letscore.tech {
 	encode gzip
 
 	handle /bot/webhook* {

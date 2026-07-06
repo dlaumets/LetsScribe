@@ -2,7 +2,17 @@
 # Pull latest code and rebuild containers
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-/opt/letstranscriber}"
+APP_DIR="${APP_DIR:-}"
+if [ -z "$APP_DIR" ]; then
+  if [ -d /opt/letsscribe ]; then
+    APP_DIR=/opt/letsscribe
+  elif [ -d /opt/letstranscriber ]; then
+    APP_DIR=/opt/letstranscriber
+    echo "==> Using legacy ${APP_DIR} — run deploy/migrate-to-letsscribe.sh when ready"
+  else
+    APP_DIR=/opt/letsscribe
+  fi
+fi
 cd "$APP_DIR"
 
 echo "==> Pulling latest..."
