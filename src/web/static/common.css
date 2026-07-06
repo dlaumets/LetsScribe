@@ -175,7 +175,7 @@ body {
     padding: max(0.75rem, env(safe-area-inset-top)) 1rem 0.75rem;
   }
 
-  .auth-toggle { display: inline-flex; }
+  .btn-icon.auth-toggle { display: inline-flex; }
 
   .sidebar-top { margin-bottom: 0.75rem; }
 
@@ -704,6 +704,10 @@ label.field-label {
 }
 
 .btn-icon:hover { color: var(--text); background: var(--bg-hover); }
+
+@media (min-width: 1024px) {
+  .btn-icon.auth-toggle { display: none; }
+}
 
 .btn-block { width: 100%; }
 
