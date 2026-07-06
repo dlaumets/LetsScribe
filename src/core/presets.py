@@ -25,7 +25,7 @@ PRESETS: dict[str, Preset] = {
     "fast": Preset(
         id="fast",
         label="Быстро",
-        model="base",
+        model="tiny",
         compute_type="int8",
         description="Максимальная скорость для коротких голосовых",
         vad_parameters={**FAST_VAD},
@@ -36,13 +36,13 @@ PRESETS: dict[str, Preset] = {
     "balanced": Preset(
         id="balanced",
         label="Баланс",
-        model="small",
+        model="base",
         compute_type="int8",
-        description="Быстрее прежнего баланса, хорошее качество для русского",
-        vad_parameters={**DEFAULT_VAD},
-        beam_size=2,
+        description="Оптимальный баланс скорости и качества на CPU",
+        vad_parameters={**FAST_VAD},
+        beam_size=1,
         best_of=1,
-        condition_on_previous_text=True,
+        condition_on_previous_text=False,
     ),
     "quality": Preset(
         id="quality",

@@ -1,0 +1,15 @@
+[Unit]
+Description=Server Monitor Telegram Bot
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/server-monitor
+EnvironmentFile=/opt/server-monitor/.env
+ExecStart=/opt/server-monitor/.venv/bin/python monitor_bot.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

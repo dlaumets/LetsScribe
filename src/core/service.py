@@ -121,6 +121,8 @@ class TranscribeService:
                 condition_on_previous_text=preset.condition_on_previous_text,
                 vad_filter=preset.vad_filter,
                 vad_parameters=preset.vad_parameters,
+                without_timestamps=True,
+                temperature=0,
             )
 
             duration = info.duration or 0.0
