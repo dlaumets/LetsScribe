@@ -1,5 +1,6 @@
 from collections.abc import AsyncGenerator
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from src.core.config import get_settings
@@ -34,6 +35,12 @@ async def init_db() -> None:
     engine = get_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS idx_transcriptions_fts "
+                "ON transcriptions USING gin(to_tsvector('russian', text))"
+            )
+        )
 
 
 async def close_db() -> None:

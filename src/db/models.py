@@ -43,14 +43,7 @@ class UserSettings(Base):
 
 class Transcription(Base):
     __tablename__ = "transcriptions"
-    __table_args__ = (
-        Index("idx_transcriptions_user_created", "user_id", "created_at"),
-        Index(
-            "idx_transcriptions_fts",
-            func.to_tsvector("russian", "text"),
-            postgresql_using="gin",
-        ),
-    )
+    __table_args__ = (Index("idx_transcriptions_user_created", "user_id", "created_at"),)
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
