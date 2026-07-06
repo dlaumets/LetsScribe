@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
-# Install server monitor bot on VPS
+# Install standalone server monitor to /opt/server-monitor
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-/opt/server-monitor}"
 SRC_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_DIR="$(cd "$SRC_DIR/../.." && pwd)"
 
-echo "==> Installing to ${APP_DIR}..."
+echo "==> Installing server monitor to ${APP_DIR}..."
 mkdir -p "$APP_DIR"
-cp "$SRC_DIR/monitor_bot.py" "$SRC_DIR/collectors.py" "$SRC_DIR/requirements.txt" "$APP_DIR/"
+cp "$SRC_DIR/monitor_bot.py" "$SRC_DIR/collectors.py" "$SRC_DIR/metrics.py" \
+   "$SRC_DIR/charts.py" "$SRC_DIR/requirements.txt" "$APP_DIR/"
 
 if [ ! -f "$APP_DIR/.env" ]; then
   cp "$SRC_DIR/.env.example" "$APP_DIR/.env"
   echo "!!! Edit ${APP_DIR}/.env — set MONITOR_BOT_TOKEN and MONITOR_ALLOWED_IDS"
+else
+  echo "    Keeping existing ${APP_DIR}/.env"
 fi
 
 sed -i 's/\r$//' "$APP_DIR/.env" 2>/dev/null || true
@@ -28,7 +30,5 @@ systemctl daemon-reload
 systemctl enable server-monitor
 systemctl restart server-monitor
 
-echo "==> Status:"
-systemctl status server-monitor --no-pager -l | head -15
-echo ""
-echo "Send /whoami to your monitor bot to get your Telegram ID, then add it to MONITOR_ALLOWED_IDS"
+echo "==> Done. Service: server-monitor (@LetsTracker_bot)"
+systemctl is-active server-monitor

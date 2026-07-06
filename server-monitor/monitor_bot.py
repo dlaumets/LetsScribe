@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Telegram bot for on-demand server monitoring."""
+"""Standalone Telegram bot for VPS monitoring (not part of LetsTranscriber)."""
 
 from __future__ import annotations
 
@@ -9,8 +9,9 @@ import os
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import BufferedInputFile, InputMediaPhoto, Message
 
+from charts import render_charts
 from collectors import (
     collect_all,
     collect_cpv,
@@ -18,7 +19,9 @@ from collectors import (
     collect_server,
     collect_transcriber,
     collect_vpn,
+    format_snapshot,
 )
+from metrics import build_snapshot
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -72,18 +75,74 @@ async def _reply_metrics(message: Message, fn, *args) -> None:
         await waiting.edit_text("Ошибка при сборе метрик. Попробуй /server или /docker.")
 
 
+async def _reply_status_with_charts(message: Message) -> None:
+    waiting = await message.answer("⏳ Собираю метрики и графики…")
+    try:
+        snap = await asyncio.to_thread(
+            build_snapshot, TRANSCRIBER_API, CPV_UNITS, VPN_IFACE
+        )
+        text = format_snapshot(snap)
+        charts = await asyncio.to_thread(render_charts, snap)
+
+        await waiting.edit_text(text, parse_mode="HTML")
+
+        if not charts:
+            return
+
+        media = [
+            InputMediaPhoto(
+                media=BufferedInputFile(png, filename=f"chart_{i}.png"),
+                caption=title if i == 0 else None,
+            )
+            for i, (title, png) in enumerate(charts)
+        ]
+        # Telegram allows up to 10 photos per album
+        for offset in range(0, len(media), 10):
+            await message.answer_media_group(media[offset : offset + 10])
+    except Exception:
+        logger.exception("Status report failed")
+        await waiting.edit_text("Ошибка при формировании отчёта. Попробуй /server.")
+
+
+async def _reply_charts_only(message: Message) -> None:
+    waiting = await message.answer("⏳ Рисую графики…")
+    try:
+        snap = await asyncio.to_thread(
+            build_snapshot, TRANSCRIBER_API, CPV_UNITS, VPN_IFACE
+        )
+        charts = await asyncio.to_thread(render_charts, snap)
+        await waiting.delete()
+        if not charts:
+            await message.answer("Нет данных для графиков.")
+            return
+        media = [
+            InputMediaPhoto(
+                media=BufferedInputFile(png, filename=f"chart_{i}.png"),
+                caption=title,
+            )
+            for i, (title, png) in enumerate(charts)
+        ]
+        for offset in range(0, len(media), 10):
+            await message.answer_media_group(media[offset : offset + 10])
+    except Exception:
+        logger.exception("Charts failed")
+        await waiting.edit_text("Не удалось построить графики.")
+
+
 @router.message(Command("start", "help"))
 async def cmd_help(message: Message) -> None:
     if not await deny_or(message):
         return
     await message.answer(
-        "<b>Мониторинг сервера</b> (@LetsTracker_bot)\n\n"
-        "/status — всё сразу\n"
+        "<b>Мониторинг сервера</b> (@LetsTracker_bot)\n"
+        "<i>Отдельный сервис, не связан с LetsTranscriber</i>\n\n"
+        "/status — текст + графики\n"
+        "/graphs — только графики\n"
         "/server — CPU, RAM, диск\n"
         "/transcriber — LetsTranscriber\n"
-        "/docker — все контейнеры\n"
-        "/cpv — cpv_bot сервисы\n"
-        "/vpn — VPN (awg0)\n"
+        "/docker — контейнеры\n"
+        "/cpv — cpv_bot\n"
+        "/vpn — VPN\n"
         "/whoami — твой Telegram ID",
         parse_mode="HTML",
     )
@@ -99,7 +158,14 @@ async def cmd_whoami(message: Message) -> None:
 async def cmd_status(message: Message) -> None:
     if not await deny_or(message):
         return
-    await _reply_metrics(message, collect_all, TRANSCRIBER_API)
+    await _reply_status_with_charts(message)
+
+
+@router.message(Command("graphs"))
+async def cmd_graphs(message: Message) -> None:
+    if not await deny_or(message):
+        return
+    await _reply_charts_only(message)
 
 
 @router.message(Command("server"))

@@ -1,5 +1,5 @@
 [Unit]
-Description=Server Monitor Telegram Bot
+Description=Server Monitor Telegram Bot (standalone)
 After=network-online.target docker.service
 Wants=network-online.target
 
