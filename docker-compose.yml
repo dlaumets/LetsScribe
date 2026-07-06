@@ -34,7 +34,7 @@ services:
   bot:
     build: .
     command: python -m src.bot.main
-    mem_limit: 200m
+    mem_limit: 256m
     env_file:
       - .env
     environment:

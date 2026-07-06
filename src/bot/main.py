@@ -277,6 +277,17 @@ async def run_webhook(bot: Bot, dp: Dispatcher) -> None:
     SimpleRequestHandler(dispatcher=dp, bot=bot).register(app, path=webhook_path)
     setup_application(app, dp, bot=bot, webhook_url=webhook_url)
 
+    # setup_application registers startup hooks, but they only run via web.run_app.
+    # With AppRunner we must register the webhook explicitly.
+    await bot.set_webhook(webhook_url, drop_pending_updates=False)
+    info = await bot.get_webhook_info()
+    logger.info(
+        "Webhook registered: url=%s pending=%s last_error=%s",
+        info.url,
+        info.pending_update_count,
+        info.last_error_message,
+    )
+
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, host=host, port=port)
@@ -288,6 +299,7 @@ async def run_webhook(bot: Bot, dp: Dispatcher) -> None:
         await asyncio.Event().wait()
     finally:
         await runner.cleanup()
+        await bot.session.close()
 
 
 async def main() -> None:
