@@ -2,6 +2,7 @@ data/temp/
 data/jobs/
 models-cache/
 .env
+deploy/monitor/.env.local
 __pycache__/
 *.pyc
 .venv/
