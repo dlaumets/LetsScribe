@@ -245,6 +245,7 @@ export function bindApiKeyInput(inputId, statusId, registerBtnId) {
   input.addEventListener('change', () => setApiKey(input.value));
   input.addEventListener('input', () => {
     if (input.value.trim()) setApiKey(input.value);
+    updateAuthToggleState();
   });
 
   if (registerBtnId) {
@@ -258,6 +259,7 @@ export function bindApiKeyInput(inputId, statusId, registerBtnId) {
         input.value = key;
         setStatus(status, 'Ключ сохранён в браузере', 'ok');
         input.dispatchEvent(new Event('apikeychange', { bubbles: true }));
+        updateAuthToggleState();
       } catch (e) {
         setStatus(status, e.message, 'error');
       } finally {
@@ -265,6 +267,56 @@ export function bindApiKeyInput(inputId, statusId, registerBtnId) {
       }
     });
   }
+}
+
+const DESKTOP_MQ = '(min-width: 1024px)';
+
+function isDesktopLayout() {
+  return window.matchMedia(DESKTOP_MQ).matches;
+}
+
+function updateAuthToggleState() {
+  const toggle = document.getElementById('auth-toggle');
+  if (!toggle) return;
+  toggle.classList.toggle('has-key', hasApiKey());
+}
+
+export function openAuthPanel(panelId = 'sidebar-auth') {
+  if (isDesktopLayout()) return;
+  const panel = document.getElementById(panelId);
+  const toggle = document.getElementById('auth-toggle');
+  panel?.classList.add('is-open');
+  toggle?.setAttribute('aria-expanded', 'true');
+}
+
+export function bindAuthToggle(toggleId = 'auth-toggle', panelId = 'sidebar-auth') {
+  const toggle = document.getElementById(toggleId);
+  const panel = document.getElementById(panelId);
+  if (!toggle || !panel) return;
+
+  const mq = window.matchMedia(DESKTOP_MQ);
+
+  function setOpen(open) {
+    if (mq.matches) {
+      panel.classList.remove('is-open');
+      toggle.setAttribute('aria-expanded', 'false');
+      return;
+    }
+    panel.classList.toggle('is-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+  }
+
+  toggle.addEventListener('click', () => {
+    setOpen(!panel.classList.contains('is-open'));
+  });
+
+  mq.addEventListener('change', () => {
+    if (mq.matches) setOpen(false);
+    else if (!hasApiKey()) setOpen(true);
+  });
+
+  if (!mq.matches && !hasApiKey()) setOpen(true);
+  updateAuthToggleState();
 }
 
 export function createProgressController(panelId) {

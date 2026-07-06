@@ -2,27 +2,33 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0D1117">
+  <meta name="color-scheme" content="dark">
   <title>История — LetsTranscriber</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/common.css?v=2.1.0">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%233B72FE'/><text x='18' y='78' font-size='72' font-weight='700' font-style='italic' fill='white' font-family='sans-serif'>L</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/common.css?v=3.1.1">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2300D4AA'/><text x='18' y='78' font-size='72' font-weight='700' font-style='italic' fill='%230D1117' font-family='sans-serif'>L</text></svg>">
 </head>
 <body>
   <a href="#main" class="skip-link">Перейти к содержимому</a>
   <noscript><p class="noscript-banner">Для работы интерфейса нужен JavaScript.</p></noscript>
   <div class="app-layout">
     <aside class="sidebar">
-      <div class="sidebar-brand">
-        <div class="logo-icon" aria-hidden="true">
-          <div class="logo-mark">L</div>
-          <div class="logo-badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <div class="sidebar-top">
+        <div class="sidebar-brand">
+          <div class="logo-icon" aria-hidden="true">
+            <div class="logo-mark">L</div>
+            <div class="logo-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
           </div>
+          <h1 class="brand-title">LetsTranscriber</h1>
         </div>
-        <h1 class="brand-title">LetsTranscriber</h1>
+        <button type="button" class="btn-icon auth-toggle" id="auth-toggle" aria-expanded="false" aria-controls="sidebar-auth" aria-label="API ключ">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        </button>
       </div>
 
       <nav class="sidebar-nav" aria-label="Разделы">
@@ -36,12 +42,13 @@
         </a>
       </nav>
 
-      <div class="sidebar-auth" aria-labelledby="auth-label">
+      <div class="sidebar-auth" id="sidebar-auth" aria-labelledby="auth-label">
         <span class="section-label" id="auth-label">Доступ</span>
         <div class="field-wrap">
           <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-          <input type="text" id="api-key" class="has-icon" placeholder="API ключ" autocomplete="off" aria-label="API ключ">
+          <input type="password" id="api-key" class="has-icon" placeholder="API ключ…" autocomplete="off" spellcheck="false" aria-label="API ключ">
         </div>
+        <button type="button" class="btn btn-secondary btn-block" id="register-btn">Получить ключ</button>
         <p class="status" id="auth-status" role="status"></p>
       </div>
 
@@ -52,6 +59,12 @@
 
     <main class="main-content" id="main">
       <div class="main-inner">
+        <div class="waveform-hero" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
         <div class="page-heading">
           <h2>История</h2>
           <p>Архив распознанных записей — найдите нужную транскрипцию по тексту.</p>
@@ -72,7 +85,7 @@
 
           <div class="pagination">
             <button type="button" class="btn btn-secondary btn-sm" id="prev-btn" disabled aria-label="Предыдущая страница">←</button>
-            <span class="meta-line" id="page-info" style="margin:0">—</span>
+            <span class="meta-line pagination-info" id="page-info">—</span>
             <button type="button" class="btn btn-secondary btn-sm" id="next-btn" disabled aria-label="Следующая страница">→</button>
           </div>
         </section>
@@ -81,7 +94,7 @@
           <span class="section-label">Запись</span>
           <div class="result-box" id="detail"></div>
           <p class="meta-line" id="detail-meta"></p>
-          <button type="button" class="btn btn-secondary btn-sm" id="copy-btn" style="margin-top:0.75rem">Копировать</button>
+          <button type="button" class="btn btn-secondary btn-sm detail-copy-btn" id="copy-btn">Копировать</button>
         </section>
       </div>
     </main>
@@ -89,11 +102,12 @@
 
   <script type="module">
     import {
-      bindApiKeyInput, apiHeaders, escapeHtml, formatDuration,
+      bindApiKeyInput, bindAuthToggle, openAuthPanel, apiHeaders, escapeHtml, formatDuration,
       hasApiKey, friendlyApiError, copyToClipboard, setStatus, setButtonLoading
     } from '/static/app.js';
 
-    bindApiKeyInput('api-key', 'auth-status');
+    bindApiKeyInput('api-key', 'auth-status', 'register-btn');
+    bindAuthToggle();
 
     const apiKeyInput = document.getElementById('api-key');
     apiKeyInput.addEventListener('apikeychange', () => { page = 1; loadList(); });
@@ -109,7 +123,7 @@
       const messages = {
         noKey: {
           title: 'Нужен API-ключ',
-          hint: 'Получите или вставьте ключ в боковой панели, чтобы увидеть историю.',
+          hint: 'Нажмите иконку ключа вверху и получите или вставьте API-ключ.',
         },
         empty: {
           title: 'История пуста',
@@ -150,6 +164,7 @@
 
       if (!hasApiKey()) {
         list.innerHTML = renderEmptyState('noKey');
+        openAuthPanel();
         document.getElementById('page-info').textContent = '—';
         document.getElementById('prev-btn').disabled = true;
         document.getElementById('next-btn').disabled = true;
