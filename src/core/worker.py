@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from pathlib import Path
 
+from src.core.progress import ProgressState, clear_progress, make_callback, set_progress
 from src.core.service import get_transcribe_service
-from src.db.jobs import claim_next_pending_job, complete_job, fail_job
+from src.db.jobs import claim_next_pending_job, complete_job, fail_job, update_job_progress
 from src.db.repository import get_user_settings, save_transcription
 from src.db.session import get_session_factory
 
@@ -24,8 +26,37 @@ def wake_worker() -> None:
 async def _process_job(job_id, file_path: Path, **params) -> None:
     factory = get_session_factory()
     service = get_transcribe_service()
-
     lang = None if params["language"] == "auto" else params["language"]
+
+    set_progress(job_id, progress_percent=0, progress_stage="queued", partial_text="")
+    last_db_sync = 0.0
+
+    def sync_to_db(state: ProgressState) -> None:
+        nonlocal last_db_sync
+        now = time.monotonic()
+        if now - last_db_sync < 0.8 and state.percent < 99:
+            return
+        last_db_sync = now
+
+        async def _update() -> None:
+            async with factory() as session:
+                await update_job_progress(
+                    session,
+                    job_id,
+                    percent=state.percent,
+                    stage=state.stage,
+                    partial_text=state.partial_text,
+                )
+
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.run_coroutine_threadsafe(_update(), loop)
+        except Exception:
+            pass
+
+    on_progress = make_callback(job_id, sync_to_db)
+
     try:
         result = await asyncio.to_thread(
             service.transcribe,
@@ -33,6 +64,7 @@ async def _process_job(job_id, file_path: Path, **params) -> None:
             preset_id=params["preset"],
             language=lang,
             task=params["task"],
+            on_progress=on_progress,
         )
 
         async with factory() as session:
@@ -68,6 +100,7 @@ async def _process_job(job_id, file_path: Path, **params) -> None:
         async with factory() as session:
             await fail_job(session, job_id, str(exc))
     finally:
+        clear_progress(job_id)
         file_path.unlink(missing_ok=True)
 
 

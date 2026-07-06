@@ -10,6 +10,7 @@ from fastapi import HTTPException, UploadFile
 
 from src.core.audio import get_audio_duration, validate_extension
 from src.core.config import Settings
+from src.core.progress import get_progress
 from src.core.worker import wake_worker
 from src.db.jobs import create_job
 from src.db.models import User
@@ -95,11 +96,16 @@ async def enqueue_job(
 
 
 def job_to_response(job) -> dict:
+    live = get_progress(job.id) if job.status in ("pending", "processing") else None
+
     payload = {
         "job_id": str(job.id),
         "status": job.status,
         "created_at": job.created_at.isoformat(),
         "duration_seconds": job.duration_seconds,
+        "progress_percent": live["progress_percent"] if live else getattr(job, "progress_percent", 0) or 0,
+        "progress_stage": live["progress_stage"] if live else getattr(job, "progress_stage", job.status),
+        "partial_text": (live or {}).get("partial_text") or getattr(job, "partial_text", None),
     }
     if job.status == "completed":
         payload["text"] = job.result_text

@@ -67,6 +67,26 @@ async def claim_next_pending_job(session: AsyncSession) -> Job | None:
     return job
 
 
+async def update_job_progress(
+    session: AsyncSession,
+    job_id: uuid.UUID,
+    *,
+    percent: float,
+    stage: str,
+    partial_text: str = "",
+) -> None:
+    await session.execute(
+        update(Job)
+        .where(Job.id == job_id)
+        .values(
+            progress_percent=percent,
+            progress_stage=stage,
+            partial_text=partial_text or None,
+        )
+    )
+    await session.commit()
+
+
 async def complete_job(
     session: AsyncSession,
     job_id: uuid.UUID,
@@ -81,6 +101,8 @@ async def complete_job(
         .where(Job.id == job_id)
         .values(
             status="completed",
+            progress_percent=100.0,
+            progress_stage="done",
             result_text=result_text,
             result_segments=result_segments,
             result_meta=result_meta,

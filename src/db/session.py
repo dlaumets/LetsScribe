@@ -41,6 +41,12 @@ async def init_db() -> None:
                 "ON transcriptions USING gin(to_tsvector('russian', text))"
             )
         )
+        for stmt in (
+            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS progress_percent DOUBLE PRECISION DEFAULT 0",
+            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS progress_stage TEXT DEFAULT 'pending'",
+            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS partial_text TEXT",
+        ):
+            await conn.execute(text(stmt))
 
 
 async def close_db() -> None:

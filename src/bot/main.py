@@ -128,7 +128,7 @@ async def poll_job(api_key: str, job_id: str, status_msg: Message) -> dict:
     """Poll until job completes or fails."""
     delay = 2.0
     async with httpx.AsyncClient(timeout=30.0) as client:
-        for attempt in range(7200):  # up to ~4h with increasing delays
+        for attempt in range(7200):
             response = await client.get(
                 f"{API_URL}/v1/jobs/{job_id}",
                 headers={"X-API-Key": api_key},
@@ -142,12 +142,19 @@ async def poll_job(api_key: str, job_id: str, status_msg: Message) -> dict:
             if status == "failed":
                 raise RuntimeError(data.get("error", "Job failed"))
 
-            if attempt % 5 == 0:
-                mins = (data.get("duration_seconds") or 0) / 60
-                await status_msg.edit_text(
-                    f"⏳ В очереди... ({status})\n"
-                    f"~{mins:.0f} мин аудио — подождите"
-                )
+            if attempt % 3 == 0:
+                pct = int(data.get("progress_percent") or 0)
+                stage = data.get("progress_stage") or status
+                stage_ru = {
+                    "loading_model": "модель",
+                    "preparing": "подготовка",
+                    "transcribing": "распознавание",
+                    "finishing": "завершение",
+                    "queued": "очередь",
+                    "pending": "очередь",
+                }.get(stage, stage)
+                bar = "█" * (pct // 10) + "░" * (10 - pct // 10)
+                await status_msg.edit_text(f"⏳ {stage_ru}\n[{bar}] {pct}%")
 
             await asyncio.sleep(delay)
             if delay < 15:
@@ -168,7 +175,7 @@ async def transcribe_via_api(
     async with httpx.AsyncClient(timeout=120.0) as client:
         with file_path.open("rb") as f:
             response = await client.post(
-                f"{API_URL}/v1/transcribe",
+                f"{API_URL}/v1/jobs",
                 headers={"X-API-Key": api_key},
                 data={
                     "preset": preset,
@@ -183,10 +190,7 @@ async def transcribe_via_api(
         if response.status_code == 202:
             data = response.json()
             job_id = data["job_id"]
-            await status_msg.edit_text(
-                f"📋 Длинная запись — в очереди\njob: `{job_id[:8]}...`",
-                parse_mode="Markdown",
-            )
+            await status_msg.edit_text("⏳ В очереди…")
             return await poll_job(api_key, job_id, status_msg)
 
         response.raise_for_status()

@@ -12,7 +12,14 @@ from src.core.presets import get_preset
 from src.core.service import get_transcribe_service
 
 
+def _configure_stdio() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 def main() -> int:
+    _configure_stdio()
     parser = argparse.ArgumentParser(
         description="Transcribe voice messages (faster-whisper)",
         epilog="Example: transcribe C:\\path\\voice.ogg",

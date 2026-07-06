@@ -3,103 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Transcribe Service</title>
+  <title>LetsTranscriber</title>
   <link rel="stylesheet" href="/static/common.css">
-  <style>
-    select, input[type="text"], input[type="file"] {
-      width: 100%;
-      padding: 0.6rem 0.75rem;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 0.95rem;
-      margin-bottom: 1rem;
-    }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    @media (max-width: 560px) { .row { grid-template-columns: 1fr; } }
-    .checkbox-row {
-      display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;
-    }
-    .checkbox-row input { width: auto; margin: 0; }
-    .checkbox-row label { margin: 0; color: var(--text); }
-    button {
-      background: var(--accent);
-      color: #0f1117;
-      border: none;
-      border-radius: 8px;
-      padding: 0.7rem 1.25rem;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      width: 100%;
-    }
-    button:hover { background: var(--accent-hover); }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    button.secondary {
-      background: transparent;
-      color: var(--accent);
-      border: 1px solid var(--border);
-      margin-top: 0.5rem;
-    }
-    #result {
-      white-space: pre-wrap;
-      word-break: break-word;
-      min-height: 4rem;
-      font-size: 0.95rem;
-    }
-    .meta { font-size: 0.8rem; color: var(--muted); margin-top: 0.75rem; }
-    .status { font-size: 0.875rem; margin-top: 0.5rem; }
-    .status.error { color: var(--error); }
-    .status.ok { color: var(--success); }
-    .drop-zone {
-      border: 2px dashed var(--border);
-      border-radius: 8px;
-      padding: 2rem;
-      text-align: center;
-      color: var(--muted);
-      margin-bottom: 1rem;
-      cursor: pointer;
-      transition: border-color 0.15s;
-    }
-    .drop-zone.dragover { border-color: var(--accent); color: var(--accent); }
-    .api-key { font-family: monospace; font-size: 0.8rem; word-break: break-all; }
-  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Transcribe Service</h1>
-    <p class="subtitle">Голосовые и аудио → текст (faster-whisper)</p>
-    <nav class="nav">
-      <a href="/" class="active">Транскрипция</a>
-      <a href="/history">История</a>
-    </nav>
+  <div class="shell">
+    <header class="site-header">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">〰</div>
+        <h1>LetsTranscriber</h1>
+      </div>
+      <p class="tagline">Голосовые и аудио → текст на русском</p>
+      <nav class="nav" aria-label="Разделы">
+        <a href="/" class="active">Транскрипция</a>
+        <a href="/history">История</a>
+      </nav>
+    </header>
 
-    <div class="card" id="auth-card">
-      <label>API Key</label>
-      <input type="text" id="api-key" placeholder="Нажмите «Получить ключ» или вставьте свой">
-      <button type="button" class="secondary" id="register-btn">Получить ключ</button>
-      <p class="status" id="auth-status"></p>
-    </div>
+    <section class="card" aria-labelledby="auth-label">
+      <span class="card-label" id="auth-label">Доступ</span>
+      <label class="field-label" for="api-key">API ключ</label>
+      <input type="text" id="api-key" placeholder="Получите ключ или вставьте свой" autocomplete="off">
+      <button type="button" class="btn btn-secondary btn-sm" id="register-btn">Получить ключ</button>
+      <p class="status" id="auth-status" role="status"></p>
+    </section>
 
-    <div class="card">
-      <div class="drop-zone" id="drop-zone">
-        Перетащите аудио сюда или нажмите для выбора
+    <section class="card" aria-labelledby="upload-label">
+      <span class="card-label" id="upload-label">Новая транскрипция</span>
+
+      <div class="drop-zone" id="drop-zone" role="button" tabindex="0" aria-label="Загрузить аудиофайл">
+        <div class="drop-zone-icon" aria-hidden="true">🎙</div>
+        <p class="drop-zone-text"><strong>Выберите файл</strong> или перетащите сюда</p>
         <input type="file" id="file-input" accept="audio/*,.ogg,.opus,.mp3,.m4a,.wav,.webm,.aac,.flac" hidden>
       </div>
-      <p id="file-name" class="meta"></p>
+      <p class="file-hint" id="file-name"></p>
 
       <div class="row">
         <div>
-          <label for="preset">Пресет</label>
+          <label class="field-label" for="preset">Качество</label>
           <select id="preset">
-            <option value="fast">Быстро (base)</option>
-            <option value="balanced" selected>Баланс (small)</option>
-            <option value="quality">Качество (medium)</option>
+            <option value="fast">Быстро</option>
+            <option value="balanced" selected>Баланс</option>
+            <option value="quality">Максимум</option>
           </select>
         </div>
         <div>
-          <label for="language">Язык</label>
+          <label class="field-label" for="language">Язык</label>
           <select id="language">
             <option value="ru" selected>Русский</option>
             <option value="auto">Авто</option>
@@ -113,53 +62,53 @@
         <label for="save">Сохранить в историю</label>
       </div>
 
-      <button type="button" id="transcribe-btn">Транскрибировать</button>
-      <p class="status" id="status"></p>
-    </div>
+      <button type="button" class="btn btn-primary" id="transcribe-btn">Распознать</button>
 
-    <div class="card">
-      <label>Результат</label>
-      <div id="result">—</div>
-      <p class="meta" id="meta"></p>
-      <button type="button" class="secondary" id="copy-btn" style="display:none">Копировать</button>
-    </div>
+      <div class="progress-panel" id="progress-panel" aria-live="polite">
+        <div class="waveform" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+        </div>
+        <div class="progress-header">
+          <span class="progress-stage">Подготовка</span>
+          <span class="progress-pct">0%</span>
+        </div>
+        <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="progress-fill"></div>
+        </div>
+        <p class="preview-text"></p>
+      </div>
+
+      <p class="status" id="status" role="status"></p>
+    </section>
+
+    <section class="card" aria-labelledby="result-label">
+      <span class="card-label" id="result-label">Результат</span>
+      <div class="result-box empty" id="result">Текст появится здесь</div>
+      <p class="meta-line" id="meta"></p>
+      <button type="button" class="btn btn-secondary btn-sm" id="copy-btn" style="display:none;margin-top:0.75rem">Копировать</button>
+    </section>
   </div>
 
-  <script>
-    const apiKeyInput = document.getElementById('api-key');
-    const savedKey = localStorage.getItem('transcribe_api_key');
-    if (savedKey) apiKeyInput.value = savedKey;
+  <script type="module">
+    import {
+      bindApiKeyInput, submitJob, pollJob, createProgressController, formatMeta
+    } from '/static/app.js';
 
-    apiKeyInput.addEventListener('change', () => {
-      localStorage.setItem('transcribe_api_key', apiKeyInput.value.trim());
-    });
-
-    document.getElementById('register-btn').addEventListener('click', async () => {
-      const status = document.getElementById('auth-status');
-      status.textContent = 'Создаём ключ...';
-      status.className = 'status';
-      try {
-        const res = await fetch('/v1/register', { method: 'POST' });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Ошибка');
-        apiKeyInput.value = data.api_key;
-        localStorage.setItem('transcribe_api_key', data.api_key);
-        status.textContent = 'Ключ создан и сохранён в браузере';
-        status.className = 'status ok';
-      } catch (e) {
-        status.textContent = e.message;
-        status.className = 'status error';
-      }
-    });
+    bindApiKeyInput('api-key', 'auth-status', 'register-btn');
 
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
+    const progress = createProgressController('progress-panel');
     let selectedFile = null;
 
     dropZone.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+    });
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-    dropZone.addEventListener('drop', e => {
+    dropZone.addEventListener('drop', (e) => {
       e.preventDefault();
       dropZone.classList.remove('dragover');
       if (e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
@@ -170,7 +119,8 @@
 
     function setFile(file) {
       selectedFile = file;
-      document.getElementById('file-name').textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + ' MB)';
+      const mb = (file.size / 1024 / 1024).toFixed(2);
+      document.getElementById('file-name').textContent = `${file.name} · ${mb} MB`;
     }
 
     document.getElementById('transcribe-btn').addEventListener('click', async () => {
@@ -178,18 +128,22 @@
       const result = document.getElementById('result');
       const meta = document.getElementById('meta');
       const copyBtn = document.getElementById('copy-btn');
-      const key = apiKeyInput.value.trim();
-
-      if (!key) { status.textContent = 'Нужен API key'; status.className = 'status error'; return; }
-      if (!selectedFile) { status.textContent = 'Выберите файл'; status.className = 'status error'; return; }
-
       const btn = document.getElementById('transcribe-btn');
+
+      if (!selectedFile) {
+        status.textContent = 'Сначала выберите аудиофайл';
+        status.className = 'status error';
+        return;
+      }
+
       btn.disabled = true;
-      status.textContent = 'Обрабатываем... (может занять минуту)';
-      status.className = 'status';
-      result.textContent = '—';
+      status.textContent = '';
+      result.classList.add('empty');
+      result.textContent = 'Распознаём…';
       meta.textContent = '';
       copyBtn.style.display = 'none';
+      progress.show();
+      progress.update({ progress_percent: 0, progress_stage: 'queued' });
 
       const form = new FormData();
       form.append('file', selectedFile);
@@ -200,48 +154,34 @@
       form.append('source', 'web');
 
       try {
-        const res = await fetch('/v1/transcribe', {
-          method: 'POST',
-          headers: { 'X-API-Key': key },
-          body: form,
+        const job = await submitJob(form);
+        const data = await pollJob(job.job_id, {
+          onProgress: (d) => {
+            progress.update(d);
+            const track = document.querySelector('.progress-track');
+            if (track) track.setAttribute('aria-valuenow', Math.round(d.progress_percent || 0));
+            if (d.partial_text) {
+              result.classList.remove('empty');
+              result.textContent = d.partial_text;
+            }
+          },
         });
-        let data = await res.json();
 
-        if (res.status === 202) {
-          status.textContent = 'Длинная запись — в очереди...';
-          const jobId = data.job_id;
-          let delay = 2000;
-          while (true) {
-            await new Promise(r => setTimeout(r, delay));
-            const jr = await fetch(`/v1/jobs/${jobId}`, { headers: { 'X-API-Key': key } });
-            data = await jr.json();
-            if (data.status === 'completed') break;
-            if (data.status === 'failed') throw new Error(data.error || 'Job failed');
-            status.textContent = `В очереди (${data.status})...`;
-            delay = Math.min(delay * 1.2, 15000);
-          }
-        } else if (!res.ok) {
-          throw new Error(data.detail || 'Ошибка ' + res.status);
-        }
-
-        result.textContent = data.text || '(пусто)';
-        const m = data.meta || data.result_meta || {};
-        meta.textContent = [
-          m.preset && 'preset: ' + m.preset,
-          m.language && 'lang: ' + m.language,
-          m.duration != null && 'duration: ' + m.duration.toFixed(1) + 's',
-          m.processing_time_ms && 'time: ' + (m.processing_time_ms / 1000).toFixed(1) + 's',
-          data.saved === false && '(не сохранено)',
-        ].filter(Boolean).join(' · ');
-
-        copyBtn.style.display = 'block';
-        copyBtn.onclick = () => navigator.clipboard.writeText(data.text);
+        const text = data.text || '(пусто)';
+        result.classList.remove('empty');
+        result.textContent = text;
+        meta.textContent = formatMeta(data.meta || data.result_meta || {}, { saved: data.saved });
+        copyBtn.style.display = 'inline-flex';
+        copyBtn.onclick = () => navigator.clipboard.writeText(text);
         status.textContent = 'Готово';
         status.className = 'status ok';
       } catch (e) {
         status.textContent = e.message;
         status.className = 'status error';
+        result.classList.add('empty');
+        result.textContent = 'Текст появится здесь';
       } finally {
+        progress.hide();
         btn.disabled = false;
       }
     });

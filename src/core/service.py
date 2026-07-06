@@ -4,9 +4,13 @@ import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from src.core.config import get_settings
 from src.core.presets import Preset, get_preset
+
+if TYPE_CHECKING:
+    from src.core.progress import ProgressCallback
 
 
 @dataclass
@@ -74,7 +78,10 @@ class TranscribeService:
         preset_id: str = "balanced",
         language: str | None = "ru",
         task: str = "transcribe",
+        on_progress: ProgressCallback | None = None,
     ) -> TranscriptionResult:
+        from src.core.progress import ProgressState
+
         preset = get_preset(preset_id)
         started = time.perf_counter()
 
@@ -84,7 +91,14 @@ class TranscribeService:
             self._queue_size += 1
 
         try:
+            if on_progress:
+                on_progress(ProgressState(percent=2, stage="loading_model"))
+
             model = self._ensure_model(preset)
+
+            if on_progress:
+                on_progress(ProgressState(percent=8, stage="preparing"))
+
             segments_iter, info = model.transcribe(
                 str(audio_path),
                 language=language,
@@ -93,6 +107,7 @@ class TranscribeService:
                 vad_parameters=preset.vad_parameters,
             )
 
+            duration = info.duration or 0.0
             segments: list[dict] = []
             parts: list[str] = []
             for segment in segments_iter:
@@ -104,6 +119,19 @@ class TranscribeService:
                         "text": segment.text,
                     }
                 )
+                if on_progress and duration > 0:
+                    pct = min(98.0, 10.0 + (segment.end / duration) * 88.0)
+                    on_progress(
+                        ProgressState(
+                            percent=pct,
+                            stage="transcribing",
+                            partial_text="".join(parts).strip(),
+                            segments_done=len(segments),
+                        )
+                    )
+
+            if on_progress:
+                on_progress(ProgressState(percent=99, stage="finishing", partial_text="".join(parts).strip()))
 
             elapsed_ms = int((time.perf_counter() - started) * 1000)
             text = "".join(parts).strip()
