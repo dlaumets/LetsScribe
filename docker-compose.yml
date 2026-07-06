@@ -61,7 +61,9 @@ services:
     depends_on:
       - api
       - bot
+    restart: unless-stopped
     profiles:
+      - bot
       - prod
 
 volumes:
