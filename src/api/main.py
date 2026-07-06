@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import threading
 import uuid
 from pathlib import Path
 
@@ -44,6 +45,18 @@ async def on_startup() -> None:
     JOBS_DIR.mkdir(parents=True, exist_ok=True)
     await init_db()
     start_worker()
+
+    settings = get_settings()
+    if settings.warmup_on_startup:
+        service = get_transcribe_service()
+
+        def _warmup() -> None:
+            try:
+                service.warmup(settings.default_preset)
+            except Exception:
+                pass
+
+        threading.Thread(target=_warmup, name="whisper-warmup", daemon=True).start()
 
 
 @app.on_event("shutdown")

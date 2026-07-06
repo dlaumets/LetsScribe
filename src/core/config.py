@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     rate_limit_per_hour: int = 30
     queue_max_size: int = 5
     async_threshold_seconds: float = 900  # 15 min → background job
+    whisper_cpu_threads: int = 0  # 0 = auto (all logical CPUs)
+    whisper_num_workers: int = 1
+    warmup_on_startup: bool = True
 
     database_url: str = "postgresql+asyncpg://transcribe:transcribe@localhost:5432/transcribe"
 

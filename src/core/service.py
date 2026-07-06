@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import threading
 import time
 from dataclasses import dataclass
@@ -53,6 +54,12 @@ class TranscribeService:
         with self._queue_lock:
             return self._queue_size
 
+    def _cpu_threads(self) -> int:
+        threads = self._settings.whisper_cpu_threads
+        if threads > 0:
+            return threads
+        return os.cpu_count() or 4
+
     def _ensure_model(self, preset: Preset):
         from faster_whisper import WhisperModel
 
@@ -67,9 +74,15 @@ class TranscribeService:
                 preset.model,
                 device=self._settings.device,
                 compute_type=preset.compute_type,
+                cpu_threads=self._cpu_threads(),
+                num_workers=self._settings.whisper_num_workers,
             )
             self._current_preset_id = preset.id
             return self._model
+
+    def warmup(self, preset_id: str | None = None) -> None:
+        preset = get_preset(preset_id or self._settings.default_preset)
+        self._ensure_model(preset)
 
     def transcribe(
         self,
@@ -103,6 +116,9 @@ class TranscribeService:
                 str(audio_path),
                 language=language,
                 task=task,
+                beam_size=preset.beam_size,
+                best_of=preset.best_of,
+                condition_on_previous_text=preset.condition_on_previous_text,
                 vad_filter=preset.vad_filter,
                 vad_parameters=preset.vad_parameters,
             )
