@@ -127,6 +127,53 @@ async def fail_job(session: AsyncSession, job_id: uuid.UUID, error_message: str)
     await session.commit()
 
 
+async def cancel_job(
+    session: AsyncSession,
+    job_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> tuple[str, Job | None]:
+    """Cancel a pending or processing job. Returns (result, job)."""
+    from pathlib import Path
+
+    from src.core.progress import request_cancel
+
+    existing = await get_job(session, job_id, user_id)
+    if existing is None:
+        return "not_found", None
+    if existing.status not in ("pending", "processing"):
+        return "not_cancellable", existing
+
+    pending_file = existing.file_path if existing.status == "pending" else None
+    now = datetime.now(timezone.utc)
+
+    result = await session.execute(
+        update(Job)
+        .where(
+            Job.id == job_id,
+            Job.user_id == user_id,
+            Job.status.in_(("pending", "processing")),
+        )
+        .values(
+            status="cancelled",
+            progress_stage="cancelled",
+            error_message="Отменено пользователем",
+            completed_at=now,
+        )
+        .returning(Job)
+    )
+    job = result.scalar_one_or_none()
+    await session.commit()
+
+    if job is None:
+        refreshed = await get_job(session, job_id, user_id)
+        return "not_cancellable", refreshed
+
+    request_cancel(job_id)
+    if pending_file:
+        Path(pending_file).unlink(missing_ok=True)
+    return "ok", job
+
+
 async def list_jobs(
     session: AsyncSession,
     user_id: uuid.UUID,

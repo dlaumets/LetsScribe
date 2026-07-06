@@ -39,6 +39,24 @@ def clear_progress(job_id: uuid.UUID) -> None:
         _store.pop(job_id, None)
 
 
+def request_cancel(job_id: uuid.UUID) -> None:
+    with _lock:
+        _store.setdefault(job_id, {})["cancelled"] = True
+
+
+def is_cancelled(job_id: uuid.UUID) -> bool:
+    with _lock:
+        entry = _store.get(job_id)
+        return bool(entry and entry.get("cancelled"))
+
+
+def clear_cancel(job_id: uuid.UUID) -> None:
+    with _lock:
+        entry = _store.get(job_id)
+        if entry:
+            entry.pop("cancelled", None)
+
+
 def make_callback(job_id: uuid.UUID, db_updater: ProgressCallback | None = None) -> ProgressCallback:
     def on_progress(state: ProgressState) -> None:
         set_progress(

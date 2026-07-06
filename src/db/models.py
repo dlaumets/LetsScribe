@@ -68,7 +68,7 @@ class Job(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    status: Mapped[str] = mapped_column(Text, default="pending")  # pending|processing|completed|failed
+    status: Mapped[str] = mapped_column(Text, default="pending")  # pending|processing|completed|failed|cancelled
     preset: Mapped[str] = mapped_column(Text, default="balanced")
     language: Mapped[str] = mapped_column(Text, default="ru")
     task: Mapped[str] = mapped_column(Text, default="transcribe")

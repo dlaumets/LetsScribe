@@ -117,6 +117,8 @@ def job_to_response(job) -> dict:
         )
     elif job.status == "failed":
         payload["error"] = job.error_message
+    elif job.status == "cancelled":
+        payload["error"] = job.error_message or "Отменено пользователем"
     if job.started_at:
         payload["started_at"] = job.started_at.isoformat()
     if job.completed_at:

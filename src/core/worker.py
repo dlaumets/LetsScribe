@@ -7,9 +7,10 @@ import logging
 import time
 from pathlib import Path
 
-from src.core.progress import ProgressState, clear_progress, make_callback, set_progress
+from src.core.progress import ProgressState, clear_cancel, clear_progress, is_cancelled, make_callback, set_progress
+from src.core.errors import JobCancelled
 from src.core.service import get_transcribe_service
-from src.db.jobs import claim_next_pending_job, complete_job, fail_job, update_job_progress
+from src.db.jobs import claim_next_pending_job, complete_job, fail_job, get_job, update_job_progress
 from src.db.repository import get_user_settings, save_transcription
 from src.db.session import get_session_factory
 
@@ -28,10 +29,18 @@ async def _process_job(job_id, file_path: Path, **params) -> None:
     service = get_transcribe_service()
     lang = None if params["language"] == "auto" else params["language"]
 
+    if is_cancelled(job_id):
+        clear_progress(job_id)
+        clear_cancel(job_id)
+        file_path.unlink(missing_ok=True)
+        return
+
     set_progress(job_id, progress_percent=0, progress_stage="queued", partial_text="")
     last_db_sync = 0.0
 
     def sync_to_db(state: ProgressState) -> None:
+        if is_cancelled(job_id):
+            raise JobCancelled()
         nonlocal last_db_sync
         now = time.monotonic()
         if now - last_db_sync < 0.8 and state.percent < 99:
@@ -57,6 +66,11 @@ async def _process_job(job_id, file_path: Path, **params) -> None:
 
     on_progress = make_callback(job_id, sync_to_db)
 
+    def guarded_progress(state: ProgressState) -> None:
+        if is_cancelled(job_id):
+            raise JobCancelled()
+        on_progress(state)
+
     try:
         result = await asyncio.to_thread(
             service.transcribe,
@@ -64,10 +78,14 @@ async def _process_job(job_id, file_path: Path, **params) -> None:
             preset_id=params["preset"],
             language=lang,
             task=params["task"],
-            on_progress=on_progress,
+            on_progress=guarded_progress,
         )
 
         async with factory() as session:
+            current = await get_job(session, job_id, params["user_id"])
+            if current is None or current.status == "cancelled":
+                return
+
             transcription_id = None
             user_settings = await get_user_settings(session, params["user_id"])
             should_save = params["save"] and (
@@ -95,12 +113,15 @@ async def _process_job(job_id, file_path: Path, **params) -> None:
                 result_meta=result.meta,
                 transcription_id=transcription_id,
             )
+    except JobCancelled:
+        logger.info("Job %s cancelled", job_id)
     except Exception as exc:
         logger.exception("Job %s failed", job_id)
         async with factory() as session:
             await fail_job(session, job_id, str(exc))
     finally:
         clear_progress(job_id)
+        clear_cancel(job_id)
         file_path.unlink(missing_ok=True)
 
 

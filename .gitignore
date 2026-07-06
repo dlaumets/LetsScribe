@@ -12,3 +12,4 @@ bin/
 .pytest_cache/
 .mypy_cache/
 
+.superdesign

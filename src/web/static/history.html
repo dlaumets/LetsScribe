@@ -6,61 +6,131 @@
   <title>История — LetsTranscriber</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Literata:opsz,wght@7..72,500;7..72,600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/common.css?v=1.1.1">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>〰</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/common.css?v=2.1.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%233B72FE'/><text x='18' y='78' font-size='72' font-weight='700' font-style='italic' fill='white' font-family='sans-serif'>L</text></svg>">
 </head>
 <body>
-  <div class="shell">
-    <header class="site-header">
-      <div class="brand">
-        <div class="brand-icon" aria-hidden="true">〰</div>
-        <h1>LetsTranscriber</h1>
+  <a href="#main" class="skip-link">Перейти к содержимому</a>
+  <noscript><p class="noscript-banner">Для работы интерфейса нужен JavaScript.</p></noscript>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo-icon" aria-hidden="true">
+          <div class="logo-mark">L</div>
+          <div class="logo-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+        </div>
+        <h1 class="brand-title">LetsTranscriber</h1>
       </div>
-      <p class="tagline">Архив распознанных записей</p>
-      <nav class="nav" aria-label="Разделы">
-        <a href="/">Транскрипция</a>
-        <a href="/history" class="active">История</a>
+
+      <nav class="sidebar-nav" aria-label="Разделы">
+        <a href="/" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+          Транскрипция
+        </a>
+        <a href="/history" class="nav-link active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+          История
+        </a>
       </nav>
-    </header>
 
-    <section class="card">
-      <span class="card-label">Поиск</span>
-      <label class="field-label" for="api-key">API ключ</label>
-      <input type="text" id="api-key" placeholder="Вставьте API ключ" autocomplete="off">
-      <div class="toolbar">
-        <input type="search" id="search" placeholder="Найти по тексту…">
-        <button type="button" class="btn btn-primary btn-sm" id="search-btn">Найти</button>
-        <button type="button" class="btn btn-secondary btn-sm" id="list-btn">Все</button>
+      <div class="sidebar-auth" aria-labelledby="auth-label">
+        <span class="section-label" id="auth-label">Доступ</span>
+        <div class="field-wrap">
+          <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          <input type="text" id="api-key" class="has-icon" placeholder="API ключ" autocomplete="off" aria-label="API ключ">
+        </div>
+        <p class="status" id="auth-status" role="status"></p>
       </div>
-      <p class="status" id="status" role="status"></p>
-      <div id="list"></div>
-      <div class="pagination">
-        <button type="button" class="btn btn-secondary btn-sm" id="prev-btn" disabled aria-label="Предыдущая">←</button>
-        <span class="meta-line" id="page-info" style="margin:0">—</span>
-        <button type="button" class="btn btn-secondary btn-sm" id="next-btn" disabled aria-label="Следующая">→</button>
-      </div>
-    </section>
 
-    <section class="card" id="detail-card" style="display:none">
-      <span class="card-label">Запись</span>
-      <div class="result-box" id="detail"></div>
-      <p class="meta-line" id="detail-meta"></p>
-      <button type="button" class="btn btn-secondary btn-sm" id="copy-btn" style="margin-top:0.75rem">Копировать</button>
-    </section>
+      <footer class="sidebar-footer">
+        <p>&copy; 2026 LetsTranscriber</p>
+      </footer>
+    </aside>
+
+    <main class="main-content" id="main">
+      <div class="main-inner">
+        <div class="page-heading">
+          <h2>История</h2>
+          <p>Архив распознанных записей — найдите нужную транскрипцию по тексту.</p>
+        </div>
+
+        <section aria-label="Поиск по истории">
+          <div class="history-toolbar">
+            <input type="search" id="search" placeholder="Найти по тексту…" aria-label="Поиск">
+            <button type="button" class="btn btn-primary btn-sm" id="search-btn">Найти</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="list-btn">Все</button>
+          </div>
+          <p class="status" id="status" role="status"></p>
+          <p class="status-retry hidden" id="status-retry">
+            <button type="button" class="btn btn-secondary btn-sm" id="retry-btn">Повторить</button>
+          </p>
+
+          <div class="history-list" id="list" aria-busy="false"></div>
+
+          <div class="pagination">
+            <button type="button" class="btn btn-secondary btn-sm" id="prev-btn" disabled aria-label="Предыдущая страница">←</button>
+            <span class="meta-line" id="page-info" style="margin:0">—</span>
+            <button type="button" class="btn btn-secondary btn-sm" id="next-btn" disabled aria-label="Следующая страница">→</button>
+          </div>
+        </section>
+
+        <section class="detail-card hidden" id="detail-card" aria-label="Детали записи">
+          <span class="section-label">Запись</span>
+          <div class="result-box" id="detail"></div>
+          <p class="meta-line" id="detail-meta"></p>
+          <button type="button" class="btn btn-secondary btn-sm" id="copy-btn" style="margin-top:0.75rem">Копировать</button>
+        </section>
+      </div>
+    </main>
   </div>
 
   <script type="module">
     import {
-      bindApiKeyInput, apiHeaders, escapeHtml, formatDuration
+      bindApiKeyInput, apiHeaders, escapeHtml, formatDuration,
+      hasApiKey, friendlyApiError, copyToClipboard, setStatus, setButtonLoading
     } from '/static/app.js';
 
-    bindApiKeyInput('api-key');
+    bindApiKeyInput('api-key', 'auth-status');
+
+    const apiKeyInput = document.getElementById('api-key');
+    apiKeyInput.addEventListener('apikeychange', () => { page = 1; loadList(); });
+    apiKeyInput.addEventListener('change', () => { page = 1; loadList(); });
 
     let page = 1;
     let total = 0;
     const limit = 20;
     let searchQuery = '';
+    let selectedId = null;
+
+    function renderEmptyState(kind) {
+      const messages = {
+        noKey: {
+          title: 'Нужен API-ключ',
+          hint: 'Получите или вставьте ключ в боковой панели, чтобы увидеть историю.',
+        },
+        empty: {
+          title: 'История пуста',
+          hint: 'Распознанные записи появятся здесь, если включена опция «Сохранить в историю».',
+        },
+        search: {
+          title: 'Ничего не найдено',
+          hint: 'Попробуйте другой запрос или нажмите «Все», чтобы сбросить фильтр.',
+        },
+      };
+      const m = messages[kind] || messages.empty;
+      return `<div class="empty-state"><p class="empty-state-title">${m.title}</p><p class="empty-state-hint">${m.hint}</p></div>`;
+    }
+
+    function setListBusy(busy) {
+      document.getElementById('list').setAttribute('aria-busy', String(busy));
+    }
+
+    function showRetry(show) {
+      document.getElementById('status-retry').classList.toggle('hidden', !show);
+    }
 
     function formatItemMeta(item) {
       const m = item.meta || {};
@@ -75,8 +145,22 @@
     async function loadList() {
       const status = document.getElementById('status');
       const list = document.getElementById('list');
-      status.textContent = 'Загрузка…';
-      status.className = 'status';
+      const searchBtn = document.getElementById('search-btn');
+      showRetry(false);
+
+      if (!hasApiKey()) {
+        list.innerHTML = renderEmptyState('noKey');
+        document.getElementById('page-info').textContent = '—';
+        document.getElementById('prev-btn').disabled = true;
+        document.getElementById('next-btn').disabled = true;
+        setStatus(status, '');
+        document.getElementById('detail-card').classList.add('hidden');
+        return;
+      }
+
+      setListBusy(true);
+      setStatus(status, 'Загрузка…');
+      setButtonLoading(searchBtn, true, 'Загрузка…');
 
       try {
         const url = searchQuery
@@ -84,50 +168,67 @@
           : `/v1/history?page=${page}&limit=${limit}`;
         const res = await fetch(url, { headers: apiHeaders() });
         const data = await res.json();
-        if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Ошибка');
+        if (!res.ok) throw new Error(friendlyApiError(res, data) || 'Ошибка');
 
         total = data.total;
         list.innerHTML = data.items.length
           ? data.items.map(item => `
-              <article class="history-item" data-id="${item.id}" tabindex="0" role="button">
+              <article class="history-item${selectedId === item.id ? ' selected' : ''}" data-id="${item.id}" tabindex="0" role="button" aria-pressed="${selectedId === item.id}">
                 <p class="history-item-text">${escapeHtml(item.text)}</p>
                 <p class="history-item-meta">
                   <span class="badge">${escapeHtml(item.source || 'api')}</span>
                   ${escapeHtml(formatItemMeta(item))}
                 </p>
               </article>`).join('')
-          : '<p class="empty-state">Ничего не найдено</p>';
+          : renderEmptyState(searchQuery ? 'search' : 'empty');
 
         list.querySelectorAll('.history-item').forEach(el => {
           const open = () => loadDetail(el.dataset.id);
           el.addEventListener('click', open);
-          el.addEventListener('keydown', (e) => { if (e.key === 'Enter') open(); });
+          el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
         });
 
-        document.getElementById('page-info').textContent = `Стр. ${page} · ${total} записей`;
+        document.getElementById('page-info').textContent = total
+          ? `Стр. ${page} · ${total} ${total === 1 ? 'запись' : total < 5 ? 'записи' : 'записей'}`
+          : '—';
         document.getElementById('prev-btn').disabled = page <= 1;
         document.getElementById('next-btn').disabled = page * limit >= total;
-        status.textContent = '';
+        setStatus(status, '');
       } catch (e) {
-        status.textContent = e.message;
-        status.className = 'status error';
+        list.innerHTML = renderEmptyState('empty');
+        setStatus(status, e.message, 'error');
+        showRetry(true);
+      } finally {
+        setListBusy(false);
+        setButtonLoading(searchBtn, false);
       }
     }
 
     async function loadDetail(id) {
       const card = document.getElementById('detail-card');
+      const status = document.getElementById('status');
+      const list = document.getElementById('list');
+      selectedId = id;
+      list.querySelectorAll('.history-item').forEach((el) => {
+        const on = el.dataset.id === id;
+        el.classList.toggle('selected', on);
+        el.setAttribute('aria-pressed', String(on));
+      });
+
       try {
         const res = await fetch(`/v1/history/${id}`, { headers: apiHeaders() });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Ошибка');
-        document.getElementById('detail').textContent = data.text;
+        if (!res.ok) throw new Error(friendlyApiError(res, data) || 'Ошибка');
+        document.getElementById('detail').textContent = data.text || '(пусто)';
         document.getElementById('detail-meta').textContent = formatItemMeta(data);
-        document.getElementById('copy-btn').onclick = () => navigator.clipboard.writeText(data.text);
-        card.style.display = 'block';
-        card.scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('copy-btn').onclick = async () => {
+          const ok = await copyToClipboard(data.text);
+          setStatus(status, ok ? 'Текст скопирован' : 'Не удалось скопировать', ok ? 'ok' : 'error');
+        };
+        card.classList.remove('hidden');
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       } catch (e) {
-        document.getElementById('status').textContent = e.message;
-        document.getElementById('status').className = 'status error';
+        setStatus(status, e.message, 'error');
       }
     }
 
@@ -144,11 +245,12 @@
     });
     document.getElementById('prev-btn').addEventListener('click', () => { page--; loadList(); });
     document.getElementById('next-btn').addEventListener('click', () => { page++; loadList(); });
+    document.getElementById('retry-btn').addEventListener('click', () => loadList());
     document.getElementById('search').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') document.getElementById('search-btn').click();
     });
 
-    if (localStorage.getItem('transcribe_api_key')) loadList();
+    loadList();
   </script>
 </body>
 </html>

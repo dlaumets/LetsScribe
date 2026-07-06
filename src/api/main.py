@@ -20,7 +20,7 @@ from src.core.config import get_settings
 from src.core.presets import list_presets
 from src.core.service import get_transcribe_service
 from src.core.worker import start_worker, stop_worker
-from src.db.jobs import get_job, list_jobs
+from src.db.jobs import cancel_job, get_job, list_jobs
 from src.db.repository import (
     check_rate_limit,
     create_user,
@@ -306,6 +306,19 @@ async def job_status(job_id: uuid.UUID, user: UserDep, session: SessionDep):
     job = await get_job(session, job_id, user.id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
+    return job_to_response(job)
+
+
+@app.delete("/v1/jobs/{job_id}")
+async def cancel_job_endpoint(job_id: uuid.UUID, user: UserDep, session: SessionDep):
+    result, job = await cancel_job(session, job_id, user.id)
+    if result == "not_found":
+        raise HTTPException(status_code=404, detail="Job not found")
+    if result == "not_cancellable":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Job cannot be cancelled (status: {job.status if job else 'unknown'})",
+        )
     return job_to_response(job)
 
 

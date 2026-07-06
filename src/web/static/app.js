@@ -1,5 +1,9 @@
 const API_KEY_STORAGE = 'transcribe_api_key';
 
+const AUDIO_EXTENSIONS = new Set([
+  'ogg', 'opus', 'mp3', 'm4a', 'wav', 'webm', 'aac', 'flac', 'mpeg', 'mp4', 'oga',
+]);
+
 const STAGE_LABELS = {
   pending: 'В очереди',
   queued: 'В очереди',
@@ -17,14 +21,90 @@ export function getApiKey() {
   return localStorage.getItem(API_KEY_STORAGE) || '';
 }
 
+export function hasApiKey() {
+  return Boolean(getApiKey().trim());
+}
+
 export function setApiKey(key) {
   localStorage.setItem(API_KEY_STORAGE, key.trim());
 }
 
 export function apiHeaders() {
   const key = getApiKey();
-  if (!key) throw new Error('Нужен API key — нажмите «Получить ключ»');
+  if (!key) throw new Error('Нужен API-ключ — нажмите «Получить ключ» в боковой панели');
   return { 'X-API-Key': key };
+}
+
+export function formatFileSize(bytes) {
+  if (bytes == null || Number.isNaN(bytes)) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  const mb = bytes / 1024 / 1024;
+  if (mb < 0.1) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${mb.toFixed(2)} MB`;
+}
+
+export function isAudioFile(file) {
+  if (!file) return false;
+  if (file.type && file.type.startsWith('audio/')) return true;
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  return ext ? AUDIO_EXTENSIONS.has(ext) : false;
+}
+
+export function friendlyApiError(res, data) {
+  const detail = typeof data?.detail === 'string' ? data.detail : null;
+  if (detail) return detail;
+  switch (res.status) {
+    case 400: return 'Неверный запрос — проверьте файл и настройки';
+    case 401: return 'Неверный API-ключ — получите новый или вставьте свой';
+    case 403: return 'Доступ запрещён';
+    case 404: return 'Не найдено';
+    case 413: return 'Файл слишком большой';
+    case 429: return 'Слишком много запросов — подождите и попробуйте снова';
+    case 500:
+    case 502:
+    case 503: return 'Сервер временно недоступен — попробуйте позже';
+    default: return res.ok ? '' : `Ошибка ${res.status}`;
+  }
+}
+
+export async function copyToClipboard(text) {
+  if (!text) return false;
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  }
+}
+
+export function setStatus(el, message, type = '') {
+  if (!el) return;
+  el.textContent = message;
+  el.className = type ? `status ${type}` : 'status';
+  if (message) el.setAttribute('role', 'status');
+}
+
+export function setButtonLoading(btn, loading, loadingLabel) {
+  if (!btn) return;
+  if (loading) {
+    if (!btn.dataset.label) btn.dataset.label = btn.textContent;
+    btn.disabled = true;
+    btn.classList.add('is-loading');
+    if (loadingLabel) btn.textContent = loadingLabel;
+  } else {
+    btn.disabled = false;
+    btn.classList.remove('is-loading');
+    if (btn.dataset.label) btn.textContent = btn.dataset.label;
+  }
 }
 
 export function stageLabel(stage) {
@@ -55,38 +135,104 @@ export function escapeHtml(s) {
     .replace(/>/g, '&gt;');
 }
 
-export async function pollJob(jobId, { onProgress, intervalMs = 800 } = {}) {
-  let delay = intervalMs;
+export class JobCancelledError extends Error {
+  constructor(message = 'Распознавание отменено') {
+    super(message);
+    this.name = 'JobCancelledError';
+  }
+}
+
+function throwIfAborted(signal) {
+  if (signal?.aborted) throw new JobCancelledError();
+}
+
+function delay(ms, signal) {
+  throwIfAborted(signal);
+  return new Promise((resolve, reject) => {
+    const id = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    function onAbort() {
+      clearTimeout(id);
+      reject(new JobCancelledError());
+    }
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
+function wrapFetchError(e, signal) {
+  if (signal?.aborted || e?.name === 'AbortError') throw new JobCancelledError();
+  if (e instanceof TypeError) throw new Error('Нет соединения с сервером — проверьте сеть');
+  throw e;
+}
+
+export async function pollJob(jobId, { onProgress, intervalMs = 800, signal } = {}) {
+  let delayMs = intervalMs;
   while (true) {
-    const res = await fetch(`/v1/jobs/${jobId}`, { headers: apiHeaders() });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'Ошибка опроса задачи');
+    throwIfAborted(signal);
+    let res;
+    let data;
+    try {
+      res = await fetch(`/v1/jobs/${jobId}`, { headers: apiHeaders(), signal });
+      data = await res.json();
+    } catch (e) {
+      wrapFetchError(e, signal);
+    }
+    if (!res.ok) throw new Error(friendlyApiError(res, data) || 'Ошибка опроса задачи');
 
     if (onProgress) onProgress(data);
 
     if (data.status === 'completed') return data;
+    if (data.status === 'cancelled') throw new JobCancelledError(data.error || 'Распознавание отменено');
     if (data.status === 'failed') throw new Error(data.error || 'Транскрипция не удалась');
 
-    await new Promise((r) => setTimeout(r, delay));
-    delay = Math.min(delay * 1.15, 3000);
+    await delay(delayMs, signal);
+    delayMs = Math.min(delayMs * 1.15, 3000);
   }
 }
 
-export async function submitJob(formData) {
-  const res = await fetch('/v1/jobs', {
-    method: 'POST',
-    headers: apiHeaders(),
-    body: formData,
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Ошибка отправки');
+export async function submitJob(formData, { signal } = {}) {
+  let res;
+  let data;
+  try {
+    res = await fetch('/v1/jobs', {
+      method: 'POST',
+      headers: apiHeaders(),
+      body: formData,
+      signal,
+    });
+    data = await res.json();
+  } catch (e) {
+    wrapFetchError(e, signal);
+  }
+  if (!res.ok) throw new Error(friendlyApiError(res, data) || 'Ошибка отправки');
+  return data;
+}
+
+export async function cancelJob(jobId, { signal } = {}) {
+  let res;
+  let data;
+  try {
+    res = await fetch(`/v1/jobs/${jobId}`, {
+      method: 'DELETE',
+      headers: apiHeaders(),
+      signal,
+    });
+    data = await res.json();
+  } catch (e) {
+    wrapFetchError(e, signal);
+  }
+  if (res.status === 404) throw new Error('Задача не найдена');
+  if (res.status === 409) throw new JobCancelledError('Распознавание уже завершено');
+  if (!res.ok) throw new Error(friendlyApiError(res, data) || 'Не удалось отменить задачу');
   return data;
 }
 
 export async function registerKey() {
   const res = await fetch('/v1/register', { method: 'POST' });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.detail || 'Не удалось создать ключ');
+  if (!res.ok) throw new Error(friendlyApiError(res, data) || 'Не удалось создать ключ');
   setApiKey(data.api_key);
   return data.api_key;
 }
@@ -97,20 +243,25 @@ export function bindApiKeyInput(inputId, statusId, registerBtnId) {
   if (saved) input.value = saved;
 
   input.addEventListener('change', () => setApiKey(input.value));
+  input.addEventListener('input', () => {
+    if (input.value.trim()) setApiKey(input.value);
+  });
 
   if (registerBtnId) {
-    document.getElementById(registerBtnId).addEventListener('click', async () => {
+    const registerBtn = document.getElementById(registerBtnId);
+    registerBtn.addEventListener('click', async () => {
       const status = document.getElementById(statusId);
-      status.textContent = 'Создаём ключ...';
-      status.className = 'status';
+      setStatus(status, 'Создаём ключ…');
+      setButtonLoading(registerBtn, true, 'Создаём…');
       try {
         const key = await registerKey();
         input.value = key;
-        status.textContent = 'Ключ сохранён в браузере';
-        status.className = 'status ok';
+        setStatus(status, 'Ключ сохранён в браузере', 'ok');
+        input.dispatchEvent(new Event('apikeychange', { bubbles: true }));
       } catch (e) {
-        status.textContent = e.message;
-        status.className = 'status error';
+        setStatus(status, e.message, 'error');
+      } finally {
+        setButtonLoading(registerBtn, false);
       }
     });
   }
@@ -118,9 +269,10 @@ export function bindApiKeyInput(inputId, statusId, registerBtnId) {
 
 export function createProgressController(panelId) {
   const panel = document.getElementById(panelId);
-  const fill = panel?.querySelector('.progress-fill');
+  const container = panel?.closest('.result-panel') || document;
+  const fill = container.querySelector('.progress-fill');
   const pctEl = panel?.querySelector('.progress-pct');
-  const stageEl = panel?.querySelector('.progress-stage');
+  const stageEls = container.querySelectorAll('.progress-stage');
   const previewEl = panel?.querySelector('.preview-text');
 
   return {
@@ -128,9 +280,10 @@ export function createProgressController(panelId) {
     hide() { panel?.classList.remove('active'); },
     update(data) {
       const pct = Math.round(data.progress_percent || 0);
+      const stage = stageLabel(data.progress_stage || data.status);
       if (fill) fill.style.width = `${pct}%`;
       if (pctEl) pctEl.textContent = `${pct}%`;
-      if (stageEl) stageEl.textContent = stageLabel(data.progress_stage || data.status);
+      stageEls.forEach((el) => { el.textContent = stage; });
       if (previewEl) previewEl.textContent = data.partial_text || '';
     },
   };
