@@ -60,8 +60,26 @@ PRESETS: dict[str, Preset] = {
 def get_preset(preset_id: str) -> Preset:
     if preset_id not in PRESETS:
         raise ValueError(f"Unknown preset: {preset_id}. Available: {', '.join(PRESETS)}")
-    return PRESETS[preset_id]
+    preset = PRESETS[preset_id]
+    if preset_id == "quality":
+        from src.core.config import get_settings
+
+        override = get_settings().quality_model.strip()
+        if override:
+            return Preset(
+                id=preset.id,
+                label=preset.label,
+                model=override,
+                compute_type=preset.compute_type,
+                description=preset.description + f" (model={override} via QUALITY_MODEL)",
+                vad_filter=preset.vad_filter,
+                vad_parameters=preset.vad_parameters,
+                beam_size=preset.beam_size,
+                best_of=preset.best_of,
+                condition_on_previous_text=preset.condition_on_previous_text,
+            )
+    return preset
 
 
 def list_presets() -> list[Preset]:
-    return list(PRESETS.values())
+    return [get_preset(preset_id) for preset_id in PRESETS]

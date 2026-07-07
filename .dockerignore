@@ -1,0 +1,16 @@
+models-cache/
+data/
+.git/
+.gitignore
+__pycache__/
+*.py[cod]
+.env
+.env.*
+!.env.example
+*.md
+.claude/
+.playwright-cli/
+site-screenshot.png
+deploy/_remote_migrate.py
+deploy/_remote_fix.py
+terminals/

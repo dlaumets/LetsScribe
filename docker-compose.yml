@@ -21,6 +21,9 @@ services:
     build: .
     ports:
       - "8000:8000"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     mem_limit: 1400m
     env_file:
       - .env

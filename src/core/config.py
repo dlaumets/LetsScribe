@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     whisper_cpu_threads: int = 0  # 0 = auto (all logical CPUs)
     whisper_num_workers: int = 1
     warmup_on_startup: bool = True
+    # Override quality preset model on low-RAM VPS (e.g. small instead of medium)
+    quality_model: str = ""
 
     database_url: str = "postgresql+asyncpg://transcribe:transcribe@localhost:5432/transcribe"
 

@@ -29,4 +29,9 @@ docker image prune -f
 echo "==> Status:"
 docker compose ps
 
+if [ "${PRELOAD_MODELS:-quality}" != "skip" ]; then
+  echo "==> Preloading models (${PRELOAD_MODELS:-quality})..."
+  bash deploy/preload-models.sh "${PRELOAD_MODELS:-quality}" || echo "WARN: model preload failed — check DNS / disk"
+fi
+
 echo "==> Deploy done at $(date -u +"%Y-%m-%dT%H:%M:%SZ")"

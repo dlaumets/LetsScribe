@@ -70,13 +70,22 @@ class TranscribeService:
             if self._current_preset_id == preset.id and self._model is not None:
                 return self._model
 
-            self._model = WhisperModel(
-                preset.model,
-                device=self._settings.device,
-                compute_type=preset.compute_type,
-                cpu_threads=self._cpu_threads(),
-                num_workers=self._settings.whisper_num_workers,
-            )
+            try:
+                self._model = WhisperModel(
+                    preset.model,
+                    device=self._settings.device,
+                    compute_type=preset.compute_type,
+                    cpu_threads=self._cpu_threads(),
+                    num_workers=self._settings.whisper_num_workers,
+                )
+            except OSError as exc:
+                if getattr(exc, "errno", None) == -2:
+                    raise RuntimeError(
+                        f"Не удалось скачать модель «{preset.model}» (preset {preset.id}). "
+                        "Проверьте DNS/интернет на сервере или выполните: "
+                        "bash deploy/preload-models.sh quality"
+                    ) from exc
+                raise
             self._current_preset_id = preset.id
             return self._model
 
