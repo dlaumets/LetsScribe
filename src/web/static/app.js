@@ -1,7 +1,8 @@
 const API_KEY_STORAGE = 'transcribe_api_key';
 
-const AUDIO_EXTENSIONS = new Set([
+const MEDIA_EXTENSIONS = new Set([
   'ogg', 'opus', 'mp3', 'm4a', 'wav', 'webm', 'aac', 'flac', 'mpeg', 'mp4', 'oga',
+  'mov', 'mkv', 'avi', 'mpg', '3gp',
 ]);
 
 const STAGE_LABELS = {
@@ -44,10 +45,15 @@ export function formatFileSize(bytes) {
 }
 
 export function isAudioFile(file) {
+  return isMediaFile(file);
+}
+
+export function isMediaFile(file) {
   if (!file) return false;
-  if (file.type && file.type.startsWith('audio/')) return true;
+  const type = file.type || '';
+  if (type.startsWith('audio/') || type.startsWith('video/')) return true;
   const ext = file.name.split('.').pop()?.toLowerCase();
-  return ext ? AUDIO_EXTENSIONS.has(ext) : false;
+  return ext ? MEDIA_EXTENSIONS.has(ext) : false;
 }
 
 export function friendlyApiError(res, data) {

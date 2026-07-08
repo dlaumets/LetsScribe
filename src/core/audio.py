@@ -4,7 +4,9 @@ import json
 import subprocess
 from pathlib import Path
 
-ALLOWED_EXTENSIONS = {".ogg", ".oga", ".opus", ".mp3", ".m4a", ".wav", ".webm", ".aac", ".flac"}
+AUDIO_EXTENSIONS = {".ogg", ".oga", ".opus", ".mp3", ".m4a", ".wav", ".webm", ".aac", ".flac"}
+VIDEO_EXTENSIONS = {".mp4", ".mov", ".mkv", ".avi", ".mpeg", ".mpg", ".3gp"}
+ALLOWED_EXTENSIONS = AUDIO_EXTENSIONS | VIDEO_EXTENSIONS
 
 
 def validate_extension(path: Path) -> None:
@@ -35,7 +37,7 @@ def get_audio_duration(path: Path) -> float:
     except FileNotFoundError as exc:
         raise RuntimeError("ffprobe not found; install ffmpeg") from exc
     except subprocess.CalledProcessError as exc:
-        raise ValueError("Invalid or corrupt audio file") from exc
+        raise ValueError("Invalid or corrupt media file") from exc
 
     data = json.loads(result.stdout)
     duration = data.get("format", {}).get("duration")

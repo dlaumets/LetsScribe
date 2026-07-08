@@ -24,6 +24,31 @@ logger = logging.getLogger(__name__)
 router = Router()
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 
+_MIME_SUFFIX = {
+    "audio/ogg": ".ogg",
+    "audio/opus": ".opus",
+    "audio/mpeg": ".mp3",
+    "audio/mp4": ".m4a",
+    "audio/wav": ".wav",
+    "audio/webm": ".webm",
+    "audio/aac": ".aac",
+    "audio/flac": ".flac",
+    "video/mp4": ".mp4",
+    "video/webm": ".webm",
+    "video/quicktime": ".mov",
+    "video/x-matroska": ".mkv",
+}
+
+
+def _suffix_from_name_or_mime(file_name: str | None, mime_type: str | None, default: str) -> str:
+    if file_name:
+        ext = Path(file_name).suffix.lower()
+        if ext:
+            return ext
+    if mime_type:
+        return _MIME_SUFFIX.get(mime_type, default)
+    return default
+
 
 async def safe_edit_text(message: Message, text: str, **kwargs) -> bool:
     """Edit message text; ignore Telegram 'message is not modified' errors."""
@@ -61,7 +86,7 @@ async def cmd_start(message: Message) -> None:
         settings = await get_user_settings(session, user.id)
 
     await message.answer(
-        f"Привет! Перешли голосовое — получишь текст.\n\n"
+        f"Привет! Перешли голосовое, видео или кружочек — получишь текст.\n\n"
         f"API key: `{user.api_key}`\n"
         f"Preset: {settings.preset if settings else 'balanced'}\n\n"
         f"/settings — настройки\n"
@@ -73,7 +98,8 @@ async def cmd_start(message: Message) -> None:
 @router.message(Command("help"))
 async def cmd_help(message: Message) -> None:
     await message.answer(
-        "Отправь voice, audio или файл (.ogg, .mp3).\n"
+        "Отправь голосовое, аудио, видео, кружочек (video note) или файл.\n"
+        "Форматы: .ogg, .mp3, .mp4, .mov, .mkv и др.\n"
         "Длинные записи (>15 мин) обрабатываются в фоне.\n"
         "/settings — preset и сохранение истории."
     )
@@ -223,8 +249,8 @@ async def send_transcription_result(message: Message, status_msg: Message, text:
         await message.answer_document(doc, caption="Текст слишком длинный для сообщения")
 
 
-@router.message(F.voice | F.audio | F.document)
-async def on_audio(message: Message, bot: Bot) -> None:
+@router.message(F.voice | F.audio | F.video | F.video_note | F.document)
+async def on_media(message: Message, bot: Bot) -> None:
     status = await message.answer("⏳ Обрабатываю...")
 
     factory = get_session_factory()
@@ -241,10 +267,20 @@ async def on_audio(message: Message, bot: Bot) -> None:
         suffix = ".ogg"
     elif message.audio:
         file_info = message.audio
-        suffix = Path(message.audio.file_name or "audio.mp3").suffix or ".mp3"
+        suffix = _suffix_from_name_or_mime(message.audio.file_name, message.audio.mime_type, ".mp3")
+    elif message.video_note:
+        file_info = message.video_note
+        suffix = ".mp4"
+    elif message.video:
+        file_info = message.video
+        suffix = _suffix_from_name_or_mime(message.video.file_name, message.video.mime_type, ".mp4")
     elif message.document:
         file_info = message.document
-        suffix = Path(message.document.file_name or "audio.ogg").suffix or ".ogg"
+        suffix = _suffix_from_name_or_mime(
+            message.document.file_name,
+            message.document.mime_type,
+            ".mp4",
+        )
     else:
         await status.edit_text("Неподдерживаемый тип сообщения")
         return

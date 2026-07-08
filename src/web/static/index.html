@@ -67,20 +67,20 @@
         </div>
         <div class="page-heading">
           <h2>Новая транскрипция</h2>
-          <p>Перетащите аудиофайл, чтобы начать распознавание текста на русском языке.</p>
+          <p>Перетащите аудио- или видеофайл, чтобы начать распознавание текста на русском языке.</p>
         </div>
 
         <section class="upload-section" aria-labelledby="upload-label">
           <span class="sr-only" id="upload-label">Загрузка файла</span>
 
-          <div class="drop-zone" id="drop-zone" role="button" tabindex="0" aria-label="Загрузить аудиофайл">
+          <div class="drop-zone" id="drop-zone" role="button" tabindex="0" aria-label="Загрузить аудио- или видеофайл">
             <div class="drop-zone-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
             </div>
-            <h3>Выберите аудиофайл</h3>
+            <h3>Выберите файл</h3>
             <p>или перетащите сюда</p>
-            <p class="hint">MP3, WAV, OGG, M4A, FLAC, WebM</p>
-            <input type="file" id="file-input" accept="audio/*,.ogg,.opus,.mp3,.m4a,.wav,.webm,.aac,.flac" hidden>
+            <p class="hint">MP3, WAV, OGG, M4A, FLAC, WebM, MP4, MOV, MKV</p>
+            <input type="file" id="file-input" accept="audio/*,video/*,.ogg,.opus,.mp3,.m4a,.wav,.webm,.aac,.flac,.mp4,.mov,.mkv,.avi,.mpeg,.mpg,.3gp" hidden>
           </div>
           <p class="file-hint truncate" id="file-name" hidden></p>
         </section>
@@ -251,7 +251,7 @@
         fileNameEl.hidden = true;
         fileNameEl.textContent = '';
         fileInfoText.textContent = 'Нет файла';
-        setStatus(status, 'Выберите аудиофайл: MP3, WAV, OGG, M4A, FLAC или WebM', 'error');
+        setStatus(status, 'Выберите аудио- или видеофайл: MP3, WAV, OGG, M4A, MP4, MOV, MKV и др.', 'error');
         return;
       }
       selectedFile = file;
@@ -278,7 +278,7 @@
       }
 
       if (!selectedFile) {
-        setStatus(status, 'Сначала выберите аудиофайл', 'error');
+        setStatus(status, 'Сначала выберите файл', 'error');
         dropZone.focus();
         return;
       }
